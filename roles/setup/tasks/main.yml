@@ -1,0 +1,5 @@
+- name: close firewalld
+  shell: "{{ item }}"
+  with_items:
+    - systemctl stop firewalld.service
+    - systemctl disable firewalld.service

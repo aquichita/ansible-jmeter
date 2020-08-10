@@ -1,0 +1,45 @@
+- name: init workspace
+  file: 
+    name: "{{ JMETER_PATH }}"
+    state: directory
+
+- name: copy pkg
+  copy: "src={{ pkgs }}/{{ jmeter }} dest=/tmp"
+
+- name: tar pkg
+  unarchive: 
+    src: /tmp/{{ jmeter }}
+    dest: "{{ JMETER_PATH }}"
+    remote_src: yes
+
+- name: check tar unarchive
+  shell: chdir={{ JMETER_PATH }} ls | grep jmeter*
+  register: jm_path
+
+- name: add config to profile
+  shell: |
+    /bin/echo "{{ item }}" >> /etc/profile &&
+    /bin/echo "{{ item }}" >> /etc/bashrc &&
+    /bin/echo "{{ item }}" >> /root/.bashrc &&
+    source /etc/profile &&
+    source /etc/bashrc &&
+    source /root/.bashrc
+  with_items:
+    - ""
+    - "# JMETER ENV CONFIG INFO."
+    - export JMETER_HOME={{ JMETER_PATH }}/{{jm_path.stdout}}
+    - export CLASSPATH=\$JMETER_HOME/lib/ext/ApacheJMeter_core.jar:\$JMETER_HOME/lib/jorphan.jar:\$CLASSPATH
+    - export PATH=\$JMETER_HOME/bin:\$PATH:\$HOME/bin
+
+- name: get jmeter version
+  shell: |
+      jmeter -v
+  register: version
+
+- name: check jmeter version
+  debug: var=version verbosity=0
+
+- name: clear pkg
+  file: 
+    path: /tmp/{{ jmeter }}
+    state: absent

@@ -1,0 +1,45 @@
+- name: init workspace
+  file: 
+    name: "{{ JAVA_PATH }}"
+    state: directory
+
+- name: copy pkg
+  copy: "src={{ pkgs }}/{{ jdk }} dest=/tmp"
+
+- name: tar pkg
+  unarchive: 
+    src: /tmp/{{ jdk }}
+    dest: "{{ JAVA_PATH }}"
+    remote_src: yes
+
+- name: check tar unarchive
+  shell: chdir={{ JAVA_PATH }} ls | grep jdk*
+  register: jdk_path
+
+- name: add config to profile
+  shell: |
+    /bin/echo "{{ item }}" >> /etc/profile &&
+    /bin/echo "{{ item }}" >> /etc/bashrc &&
+    /bin/echo "{{ item }}" >> /root/.bashrc &&
+    source /etc/profile &&
+    source /etc/bashrc &&
+    source /root/.bashrc
+  with_items:
+    - ""
+    - "# JAVA ENV CONFIG INFO."
+    - export JAVA_HOME={{ JAVA_PATH }}/{{ jdk_path.stdout }}
+    - export LD_LIBRARY_PATH=\$JAVA_HOME/lib:\$LD_LIBRARY_PATH
+    - export PATH=\$JAVA_HOME/bin:\$HOME/bin:\$PATH
+    
+- name: get java version
+  shell: |
+      java -version
+  register: version
+
+- name: check java version
+  debug: var=version verbosity=0
+
+- name: clear pkg
+  file: 
+    path: /tmp/{{ jdk }}
+    state: absent

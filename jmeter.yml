@@ -1,0 +1,8 @@
+- hosts:
+  - jmeter-worker
+  remote_user: root
+  gather_facts: false
+  roles:
+  - setup
+  - java
+  - singleton
